@@ -14,12 +14,12 @@ from typing import Optional
 try:
     from .gui import WigorViewerGUI
     from .timetable_parser import parse_wigor_html
-    from .wigor_api import WigorAPI
+    from . import wigor_api
 except ImportError:
     # Imports absolus pour exécution directe
     from src.gui import WigorViewerGUI
     from src.timetable_parser import parse_wigor_html
-    from src.wigor_api import WigorAPI
+    import src.wigor_api as wigor_api
 
 # Version de l'application
 __version__ = "2.0.0"
@@ -44,9 +44,9 @@ def smoke_test() -> int:
     print("🧪 Smoke test - Vérification des composants principaux...")
 
     try:
-        # Test 1: Instanciation des classes principales
-        print("  ✓ Test 1: Instanciation WigorAPI...", end=" ")
-        WigorAPI()
+        # Test 1: Test de l'import des fonctions principales
+        print("  ✓ Test 1: Import des fonctions API...", end=" ")
+        from .wigor_api import fetch_wigor_html, parse_cookie_header
         print("OK")
 
         # Test 2: Chargement du fichier de test
