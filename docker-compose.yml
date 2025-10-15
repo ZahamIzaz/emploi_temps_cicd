@@ -1,0 +1,69 @@
+# Docker Compose pour développement et tests
+version: '3.8'
+
+services:
+  wigor-viewer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: wigor-viewer-app
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DISPLAY=:99
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
+    networks:
+      - wigor-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; from src.wigor_api import WigorAPI; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Service pour les tests d'intégration
+  wigor-viewer-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: wigor-viewer-test
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+      - test-results:/app/test-results
+    command: |
+      sh -c "
+        pip install pytest pytest-cov pytest-html &&
+        pytest tests/ -v --tb=short --html=test-results/report.html --self-contained-html &&
+        echo 'Tests completed'
+      "
+    networks:
+      - wigor-network
+
+  # Service de monitoring (optionnel)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: wigor-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - wigor-network
+    profiles:
+      - monitoring
+
+networks:
+  wigor-network:
+    driver: bridge
+
+volumes:
+  test-results:
+    driver: local

@@ -1,0 +1,11 @@
+# Production dependencies for Wigor Viewer
+# Compatible with Python 3.8+
+
+# Core HTTP library for API requests
+requests>=2.31.0,<3.0.0
+
+# HTML parsing library for timetable extraction
+beautifulsoup4>=4.12.0,<5.0.0
+
+# Environment variables management
+python-dotenv>=1.0.0,<2.0.0
