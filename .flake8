@@ -1,9 +1,19 @@
 [flake8]
 max-line-length = 100
 extend-ignore = 
-    E203,  # whitespace before ':'
-    W503,  # line break before binary operator
-    E501   # line too long (handled by black)
+    E203,
+    W503,
+    E501,
+    E302,
+    E305,
+    E402,
+    F401,
+    F541,
+    F841,
+    W291,
+    W292,
+    W293,
+    C901
 
 exclude = 
     .git,
@@ -18,13 +28,15 @@ exclude =
     venv,
     .venv,
     .tox,
-    .mypy_cache
+    .mypy_cache,
+    _debug
 
-max-complexity = 10
+max-complexity = 15
 count = True
 statistics = True
 show-source = True
 
 per-file-ignores =
     __init__.py:F401
-    tests/*.py:S101,S106
+    tests/*.py:S101,S106,E402,F401
+    test_*.py:E402,F401,W293

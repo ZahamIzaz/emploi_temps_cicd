@@ -3,8 +3,8 @@
 Test de lancement de l'interface graphique Wigor Viewer
 """
 
-import sys
 import os
+import sys
 import tkinter as tk
 
 # Ajouter le répertoire racine au PYTHONPATH
@@ -17,8 +17,9 @@ print(f"📁 Répertoire: {current_dir}")
 try:
     # Test d'importation
     from src.gui import WigorViewerGUI
+
     print("✅ Modules importés avec succès")
-    
+
     # Test de Tkinter
     try:
         root = tk.Tk()
@@ -28,12 +29,12 @@ try:
     except Exception as e:
         print(f"❌ Erreur Tkinter: {e}")
         sys.exit(1)
-    
+
     # Lancer l'application
     print("🖥️  Lancement de l'interface graphique...")
     app = WigorViewerGUI()
     app.run()
-    
+
 except ImportError as e:
     print(f"❌ Erreur d'import: {e}")
     print("📦 Vérifiez que tous les modules sont présents")

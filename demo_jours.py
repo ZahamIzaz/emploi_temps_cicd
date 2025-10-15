@@ -4,20 +4,22 @@ Démonstration des améliorations du parser Wigor Viewer.
 Montre l'extraction correcte des jours depuis les éléments TCJour.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from timetable_parser import parse_wigor_html
 
+
 def test_demo_jours():
     """Démonstration avec un HTML plus réaliste."""
-    
+
     print("🎯 DÉMONSTRATION - EXTRACTION DES JOURS")
     print("=" * 60)
-    
+
     # HTML simulé plus proche de la réalité Wigor
-    realistic_html = '''
+    realistic_html = """
     <html>
     <head><title>Emploi du temps EPSI</title></head>
     <body>
@@ -79,14 +81,14 @@ def test_demo_jours():
         </div>
     </body>
     </html>
-    '''
-    
+    """
+
     # Parse le HTML
     courses = parse_wigor_html(realistic_html)
-    
+
     print(f"📊 RÉSULTATS: {len(courses)} cours extraits")
     print("=" * 60)
-    
+
     # Affichage par jour
     courses_by_day = {}
     for course in courses:
@@ -94,21 +96,21 @@ def test_demo_jours():
         if day not in courses_by_day:
             courses_by_day[day] = []
         courses_by_day[day].append(course)
-    
+
     # Ordre des jours de la semaine
     jours_ordre = [
-        "Lundi 13 Octobre", 
-        "Mardi 14 Octobre", 
-        "Mercredi 15 Octobre", 
-        "Jeudi 16 Octobre", 
-        "Vendredi 17 Octobre"
+        "Lundi 13 Octobre",
+        "Mardi 14 Octobre",
+        "Mercredi 15 Octobre",
+        "Jeudi 16 Octobre",
+        "Vendredi 17 Octobre",
     ]
-    
+
     for jour in jours_ordre:
         if jour in courses_by_day:
             print(f"\n📅 {jour}")
             print("-" * len(jour))
-            
+
             for course in courses_by_day[jour]:
                 print(f"  🕘 {course['horaire']} | {course['titre']}")
                 print(f"     Salle: {course['salle']} | Prof: {course['prof']}")
@@ -118,15 +120,18 @@ def test_demo_jours():
             print("-" * len(jour))
             print("  Aucun cours")
             print()
-    
+
     # Vérification des améliorations
     print("=" * 60)
     print("✅ AMÉLIORATIONS VÉRIFIÉES:")
     print(f"   • Jours extraits depuis <td class='TCJour'> ✓")
-    print(f"   • {len([c for c in courses if c['jour'] != 'Jour inconnu'])} cours avec jour correct ✓")
+    print(
+        f"   • {len([c for c in courses if c['jour'] != 'Jour inconnu'])} cours avec jour correct ✓"
+    )
     print(f"   • {len([c for c in courses if c['jour'] == 'Jour inconnu'])} cours sans jour ✓")
     print(f"   • Format jour conservé tel quel (pas de conversion) ✓")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     test_demo_jours()

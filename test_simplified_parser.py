@@ -3,24 +3,27 @@
 Test de la logique simplifiée d'attribution des jours dans le parser Wigor.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import sys
 
-from timetable_parser import parse_wigor_html
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
 import logging
 
+from timetable_parser import parse_wigor_html
+
 # Configuration des logs
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
+
 
 def test_simplified_day_assignment():
     """Test de l'attribution séquentielle des jours."""
-    
+
     print("🧪 TEST LOGIQUE SIMPLIFIÉE D'ATTRIBUTION DES JOURS")
     print("=" * 70)
-    
+
     # HTML de test avec structure réaliste
-    test_html = '''
+    test_html = """
     <html>
     <body>
         <!-- En-têtes des jours -->
@@ -90,14 +93,14 @@ def test_simplified_day_assignment():
         </div>
     </body>
     </html>
-    '''
-    
+    """
+
     # Parse le HTML avec la nouvelle logique
     courses = parse_wigor_html(test_html)
-    
+
     print(f"\n📊 RÉSULTATS: {len(courses)} cours extraits")
     print("=" * 70)
-    
+
     # Vérification de la distribution par jour
     courses_by_day = {}
     for course in courses:
@@ -105,69 +108,75 @@ def test_simplified_day_assignment():
         if day not in courses_by_day:
             courses_by_day[day] = []
         courses_by_day[day].append(course)
-    
+
     expected_days = [
-        "Lundi 13 Octobre", 
-        "Mardi 14 Octobre", 
-        "Mercredi 15 Octobre", 
-        "Jeudi 16 Octobre", 
-        "Vendredi 17 Octobre"
+        "Lundi 13 Octobre",
+        "Mardi 14 Octobre",
+        "Mercredi 15 Octobre",
+        "Jeudi 16 Octobre",
+        "Vendredi 17 Octobre",
     ]
-    
+
     print("📅 DISTRIBUTION PAR JOUR:")
     print("-" * 70)
-    
+
     for day in expected_days:
         if day in courses_by_day:
             day_courses = courses_by_day[day]
             print(f"\n🗓️ {day}: {len(day_courses)} cours")
-            
+
             for course in day_courses:
                 print(f"   • {course['horaire']} | {course['titre']}")
                 print(f"     Salle: {course['salle']} | Prof: {course['prof']}")
         else:
             print(f"\n🗓️ {day}: 0 cours")
-    
+
     print("\n" + "=" * 70)
     print("✅ VÉRIFICATIONS:")
-    
+
     # Vérifications
     checks = []
-    
+
     # 1. Tous les cours ont un jour valide
-    valid_days = sum(1 for c in courses if c['jour'] in expected_days)
+    valid_days = sum(1 for c in courses if c["jour"] in expected_days)
     checks.append(f"   • Cours avec jour valide: {valid_days}/{len(courses)} ✓")
-    
+
     # 2. Aucun "Jour inconnu"
-    unknown_days = sum(1 for c in courses if c['jour'] == "Jour inconnu")
+    unknown_days = sum(1 for c in courses if c["jour"] == "Jour inconnu")
     checks.append(f"   • Cours avec 'Jour inconnu': {unknown_days} ✓")
-    
+
     # 3. Distribution équilibrée (approximative)
     courses_per_day = len(courses) // len(expected_days)
-    balanced = all(len(courses_by_day.get(day, [])) <= courses_per_day + 1 
-                  for day in expected_days)
+    balanced = all(len(courses_by_day.get(day, [])) <= courses_per_day + 1 for day in expected_days)
     checks.append(f"   • Distribution équilibrée: {'Oui' if balanced else 'Non'} ✓")
-    
+
     # 4. Format jour conservé
-    original_format = all(any(day_part in c['jour'] for day_part in ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'])
-                         for c in courses if c['jour'] != "Jour inconnu")
+    original_format = all(
+        any(
+            day_part in c["jour"]
+            for day_part in ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"]
+        )
+        for c in courses
+        if c["jour"] != "Jour inconnu"
+    )
     checks.append(f"   • Format jour conservé: {'Oui' if original_format else 'Non'} ✓")
-    
+
     for check in checks:
         print(check)
-    
+
     print("=" * 70)
-    
-    return len(courses), len([c for c in courses if c['jour'] != "Jour inconnu"])
+
+    return len(courses), len([c for c in courses if c["jour"] != "Jour inconnu"])
+
 
 def test_fallback_behavior():
     """Test du comportement de fallback sans jours."""
-    
+
     print("\n🔄 TEST COMPORTEMENT DE FALLBACK")
     print("=" * 70)
-    
+
     # HTML sans en-têtes de jours
-    fallback_html = '''
+    fallback_html = """
     <html>
     <body>
         <div class="Case">
@@ -178,28 +187,33 @@ def test_fallback_behavior():
         </div>
     </body>
     </html>
-    '''
-    
+    """
+
     courses = parse_wigor_html(fallback_html)
-    
+
     print(f"📊 Cours extraits: {len(courses)}")
     if courses:
         print(f"📅 Jour assigné: '{courses[0]['jour']}'")
-        if courses[0]['jour'] == "Jour inconnu":
+        if courses[0]["jour"] == "Jour inconnu":
             print("✅ Fallback fonctionne correctement")
         else:
             print("❌ Fallback ne fonctionne pas")
-    
+
     print("=" * 70)
+
 
 if __name__ == "__main__":
     total_courses, valid_courses = test_simplified_day_assignment()
     test_fallback_behavior()
-    
+
     print(f"\n🎯 RÉSUMÉ FINAL:")
     print(f"   • Total cours extraits: {total_courses}")
     print(f"   • Cours avec jour valide: {valid_courses}")
-    print(f"   • Taux de succès: {(valid_courses/total_courses)*100:.1f}%" if total_courses > 0 else "   • Pas de cours trouvés")
+    print(
+        f"   • Taux de succès: {(valid_courses/total_courses)*100:.1f}%"
+        if total_courses > 0
+        else "   • Pas de cours trouvés"
+    )
     print("   • Logique simplifiée: ✅ Implémentée")
     print("   • Pas de détection de coordonnées: ✅ Confirmé")
     print("   • Format jour conservé: ✅ Confirmé")

@@ -3,18 +3,20 @@
 Test rapide du parser amélioré pour vérifier l'extraction des jours.
 """
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import sys
 
-from timetable_parser import parse_wigor_html
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
 import logging
 
+from timetable_parser import parse_wigor_html
+
 # Configuration des logs pour voir le détail
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 # HTML de test avec la structure TCJour
-test_html = '''
+test_html = """
 <html>
 <body>
     <!-- Jours de la semaine -->
@@ -40,7 +42,7 @@ test_html = '''
     </div>
 </body>
 </html>
-'''
+"""
 
 print("🧪 TEST DU PARSER AMÉLIORÉ")
 print("=" * 40)
