@@ -5,9 +5,19 @@ Utilise Tkinter pour afficher l'emploi du temps d'un étudiant EPSI.
 
 import logging
 import threading
-import tkinter as tk
-from tkinter import messagebox, ttk
 from typing import Dict, List
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+
+    TKINTER_AVAILABLE = True
+except ImportError:
+    # Tkinter non disponible (environnement headless)
+    TKINTER_AVAILABLE = False
+    tk = None
+    messagebox = None
+    ttk = None
 
 try:
     from ..auth.cookies_auth import build_session_from_cookie_header, is_authenticated
@@ -28,6 +38,11 @@ class WigorViewerGUI:
 
     def __init__(self):
         """Initialise l'interface graphique."""
+        if not TKINTER_AVAILABLE:
+            raise ImportError(
+                "Tkinter n'est pas disponible. Interface graphique non supportée dans cet environnement."
+            )
+
         self.root = tk.Tk()
         self.root.title("Wigor Viewer")
         self.root.geometry("1200x720")

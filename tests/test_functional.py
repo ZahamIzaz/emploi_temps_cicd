@@ -155,9 +155,12 @@ class TestGuiModuleFunctional(unittest.TestCase):
     def test_gui_imports_correctly(self):
         """Test que le module GUI s'importe correctement."""
         try:
-            from src.gui import WigorViewerGUI
+            from src.gui import TKINTER_AVAILABLE, WigorViewerGUI
 
             self.assertTrue(callable(WigorViewerGUI))
+            # En environnement headless, juste vérifier que la classe existe
+            if not TKINTER_AVAILABLE:
+                self.skipTest("Tkinter non disponible en environnement headless")
         except ImportError as e:
             self.fail(f"GUI module import failed: {e}")
 
@@ -165,12 +168,20 @@ class TestGuiModuleFunctional(unittest.TestCase):
     @patch("src.gui.parse_wigor_html")
     def test_gui_functions_importable(self, mock_parse, mock_fetch):
         """Test que les fonctions GUI sont importables."""
-        # Simuler les imports sans créer de GUI
-        mock_fetch.return_value = "<html>test</html>"
-        mock_parse.return_value = []
+        try:
+            from src.gui import TKINTER_AVAILABLE
 
-        # Test réussi si pas d'exception
-        self.assertTrue(True)
+            if not TKINTER_AVAILABLE:
+                self.skipTest("Tkinter non disponible en environnement headless")
+
+            # Simuler les imports sans créer de GUI
+            mock_fetch.return_value = "<html>test</html>"
+            mock_parse.return_value = []
+
+            # Test réussi si pas d'exception
+            self.assertIsNotNone(mock_fetch.return_value)
+        except ImportError:
+            self.skipTest("GUI module non disponible")
 
 
 if __name__ == "__main__":
