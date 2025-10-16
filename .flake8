@@ -1,19 +1,9 @@
 [flake8]
 max-line-length = 100
 extend-ignore = 
-    E203,
-    W503,
-    E501,
-    E302,
-    E305,
-    E402,
-    F401,
-    F541,
-    F841,
-    W291,
-    W292,
-    W293,
-    C901
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    E501   # line too long (handled by black)
 
 exclude = 
     .git,
@@ -29,7 +19,9 @@ exclude =
     .venv,
     .tox,
     .mypy_cache,
-    _debug
+    _debug,
+    node_modules,
+    migrations
 
 max-complexity = 15
 count = True
@@ -39,4 +31,4 @@ show-source = True
 per-file-ignores =
     __init__.py:F401
     tests/*.py:S101,S106,E402,F401
-    test_*.py:E402,F401,W293
+    test_*.py:E402,F401

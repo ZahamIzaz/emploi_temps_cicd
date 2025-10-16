@@ -1,0 +1,22 @@
+{
+  "test_parse_sample_timetable": {
+    "events": [
+      {
+        "title": "Mathématiques",
+        "start_time": "08:00",
+        "end_time": "10:00",
+        "room": "Salle A101",
+        "professor": "Prof. MARTIN"
+      },
+      {
+        "title": "Programmation Python",
+        "start_time": "10:15",
+        "end_time": "12:15",
+        "room": "Salle B203",
+        "professor": "Prof. DURANT"
+      }
+    ],
+    "total_events": 2,
+    "date": "2024-01-15"
+  }
+}

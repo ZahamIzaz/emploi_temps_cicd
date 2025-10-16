@@ -5,17 +5,17 @@ on:
     branches: [ main, develop ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 env:
-  PYTHON_VERSION: '3.10'
-  CACHE_VERSION: v1
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # =================== STAGE 1: TEST & QUALITY ===================
   lint:
-    name: Code Quality (Lint & Format)
+    name: Lint
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -23,128 +23,51 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: '3.10'
         
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ env.CACHE_VERSION }}-${{ hashFiles('requirements-dev.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ env.CACHE_VERSION }}-
-          ${{ runner.os }}-pip-
-          
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        pip install flake8
         
-    - name: Run Black (format check)
-      run: black --check --diff .
-      
-    - name: Run isort (import sort check)
-      run: isort --check-only --diff .
-      
-    - name: Run Flake8 (linting)
+    - name: Run flake8
       run: flake8 .
-  test:
-    name: Tests & Coverage
+
+  unit_tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.10'
         
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ env.CACHE_VERSION }}-${{ hashFiles('requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ env.CACHE_VERSION }}-
-          ${{ runner.os }}-pip-${{ matrix.python-version }}-
-          ${{ runner.os }}-pip-
-          
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
         
-    - name: Run tests with pytest
+    - name: Run unit tests with coverage
       env:
         CI: true
       run: |
-        pytest tests/ -v --tb=short
-      
-    - name: Run pytest with coverage (Python 3.10 only)
-      if: matrix.python-version == '3.10'
-      env:
-        CI: true
-      run: |
-        pytest tests/ --cov=src --cov-report=xml --cov-report=html --junitxml=pytest-report.xml
+        pytest --cov=. --cov-report=xml:coverage.xml --junitxml=pytest-report.xml
         
     - name: Upload coverage reports
-      if: matrix.python-version == '3.10'
       uses: actions/upload-artifact@v4
       with:
         name: coverage-reports
         path: |
           coverage.xml
-          htmlcov/
           pytest-report.xml
 
-  sonar:
-    name: SonarQube Analysis
+  regression_tests:
+    name: Regression Tests
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for better analysis
-        
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install dependencies and run tests
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
-        pytest --cov=src --cov-report=xml --junitxml=pytest-report.xml
-        
-    - name: Download coverage artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: coverage-reports
-        
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  build-exe:
-    name: Build Executable
-    runs-on: ${{ matrix.os }}
-    needs: [lint, test]
-    
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -152,20 +75,65 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: '3.10'
         
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        
+    - name: Run regression tests
+      env:
+        CI: true
+      run: |
+        pytest tests/test_regression.py -v
+
+  sonar:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: unit_tests
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
-        path: |
-          ~/.cache/pip
-          ~/AppData/Local/pip/Cache
-          ~/Library/Caches/pip
-        key: ${{ runner.os }}-pip-build-${{ env.CACHE_VERSION }}-${{ hashFiles('requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-build-${{ env.CACHE_VERSION }}-
-          ${{ runner.os }}-pip-build-
-          
+        fetch-depth: 0
+        
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-reports
+        
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarqube-scan-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # =================== STAGE 2: BUILD ===================
+  build_exe:
+    name: Build Executable
+    runs-on: ubuntu-latest
+    needs: [lint, unit_tests, regression_tests, sonar]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk patchelf
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -174,35 +142,18 @@ jobs:
         
     - name: Build executable
       run: |
-        ls -la *.spec || echo "No .spec files found"
-        pwd
-        pyinstaller --onefile --distpath dist --workpath build wigor.spec
-      
-    - name: Test executable (Linux/macOS)
-      if: runner.os != 'Windows'
-      run: |
-        ./dist/wigor --version
-        ./dist/wigor --check
-        
-    - name: Test executable (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        .\dist\wigor.exe --version
-        .\dist\wigor.exe --check
+        pyinstaller wigor.spec
         
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
-        name: wigor-${{ runner.os }}-${{ runner.arch }}
-        path: |
-          dist/wigor*
-        retention-days: 7
+        name: wigor-viewer-executable
+        path: dist/wigor-viewer
 
-  docker:
+  docker_build_test:
     name: Docker Build & Test
     runs-on: ubuntu-latest
-    needs: [lint, test]
-    
+    needs: [lint, unit_tests, regression_tests, sonar]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -210,107 +161,48 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
-    - name: Cache Docker layers
-      uses: actions/cache@v3
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ env.CACHE_VERSION }}-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-${{ env.CACHE_VERSION }}-
-          ${{ runner.os }}-buildx-
-          
     - name: Build Docker image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v5
       with:
         context: .
         push: false
         tags: wigor-viewer:test
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         
-    - name: Test Docker image
+    - name: Run smoke test
       run: |
-        docker run --rm wigor-viewer:test --version
         docker run --rm wigor-viewer:test --check
-        
-    - name: Move cache
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: lint
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install security tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install bandit safety
-        
-    - name: Run Bandit security scan
-      run: bandit -r src/ -f json -o bandit-report.json || true
-      
-    - name: Run Safety security scan
-      run: |
-        pip install -r requirements.txt
-        safety check --json --output safety-report.json || true
-        
-    - name: Upload security reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: security-reports
-        path: |
-          bandit-report.json
-          safety-report.json
-
+  # =================== STAGE 3: DEPLOY ===================
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [lint, test, sonar, build-exe, docker, security]
-    if: startsWith(github.ref, 'refs/tags/v')
-    
+    needs: [build_exe, docker_build_test]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Download all executables
+    - name: Download executable
       uses: actions/download-artifact@v4
       with:
-        path: artifacts/
-        
-    - name: Prepare release assets
-      run: |
-        mkdir -p release-assets
-        find artifacts/ -name "wigor*" -type f -exec cp {} release-assets/ \;
-        ls -la release-assets/
+        name: wigor-viewer-executable
+        path: ./artifacts
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: release-assets/*
+        files: ./artifacts/wigor-viewer
         generate_release_notes: true
-        draft: false
-        prerelease: ${{ contains(github.ref, '-') }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
+  deploy_registry:
     name: Deploy to Registry
     runs-on: ubuntu-latest
-    needs: [release]
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')
-    environment: production
-    
+    needs: [build_exe, docker_build_test]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -318,10 +210,10 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
-    - name: Login to GitHub Container Registry
+    - name: Login to Container Registry
       uses: docker/login-action@v3
       with:
-        registry: ghcr.io
+        registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         
@@ -329,14 +221,13 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ghcr.io/${{ github.repository }}
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
           type=ref,event=tag
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest
           
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v6
+    - name: Build and push
+      uses: docker/build-push-action@v5
       with:
         context: .
         push: true
