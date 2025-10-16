@@ -173,7 +173,10 @@ jobs:
         pip install pyinstaller
         
     - name: Build executable
-      run: pyinstaller wigor.spec
+      run: |
+        ls -la *.spec || echo "No .spec files found"
+        pwd
+        pyinstaller --onefile --distpath dist --workpath build wigor.spec
       
     - name: Test executable (Linux/macOS)
       if: runner.os != 'Windows'

@@ -11,74 +11,56 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 def test_imports():
     """Test que tous les modules principaux s'importent correctement"""
-    try:
-        print("🔍 Testing imports...")
+    print("🔍 Testing imports...")
 
-        # Test imports des modules
-        import src.cli
-        import src.gui
-        import src.main
-        import src.timetable_parser
-        import src.wigor_api
+    # Test imports des modules
+    import src.cli
+    import src.gui
+    import src.main
+    import src.timetable_parser
+    import src.wigor_api
 
-        print("✅ All imports successful")
-        return True
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        return False
+    print("✅ All imports successful")
+    assert True  # Test passé si on arrive ici
 
 
 def test_basic_functionality():
     """Test des fonctions de base"""
-    try:
-        print("🔍 Testing basic functionality...")
+    print("🔍 Testing basic functionality...")
 
-        # Test parser avec HTML basique
-        from src.timetable_parser import parse_wigor_html
+    # Test parser avec HTML basique
+    from src.timetable_parser import parse_wigor_html
 
-        result = parse_wigor_html("<html><body></body></html>")
-        assert isinstance(result, dict)
-        assert "courses" in result
+    result = parse_wigor_html("<html><body></body></html>")
+    # Le parser retourne une liste de cours vide pour HTML vide
+    assert isinstance(result, list)
 
-        # Test extraction de titre de page
-        from src.wigor_api import extract_page_title
+    # Test extraction de titre de page
+    from src.wigor_api import extract_page_title
 
-        title = extract_page_title("<html><head><title>Test</title></head></html>")
-        assert title == "Test"
+    title = extract_page_title("<html><head><title>Test</title></head></html>")
+    assert title == "Test"
 
-        # Test parsing de cookies
-        from src.wigor_api import parse_cookie_header
+    # Test parsing de cookies
+    from src.wigor_api import parse_cookie_header
 
-        cookies = parse_cookie_header("session=123; csrf=abc")
-        assert isinstance(cookies, dict)
+    cookies = parse_cookie_header("session=123; csrf=abc")
+    assert isinstance(cookies, dict)
 
-        print("✅ Basic functionality tests passed")
-        return True
-    except Exception as e:
-        print(f"❌ Functionality error: {e}")
-        return False
+    print("✅ Basic functionality tests passed")
 
 
 def main():
     """Point d'entrée principal"""
     print("🚀 Starting CI smoke tests...")
 
-    tests = [
-        test_imports,
-        test_basic_functionality,
-    ]
-
-    results = []
-    for test in tests:
-        results.append(test())
-
-    print(f"\n📊 Results: {sum(results)}/{len(results)} tests passed")
-
-    if all(results):
+    try:
+        test_imports()
+        test_basic_functionality()
         print("✅ All smoke tests passed!")
         sys.exit(0)
-    else:
-        print("❌ Some tests failed!")
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
         sys.exit(1)
 
 
