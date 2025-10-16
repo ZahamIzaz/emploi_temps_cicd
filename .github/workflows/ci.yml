@@ -55,7 +55,7 @@ jobs:
       env:
         CI: true
       run: |
-        pytest --cov=. --cov-report=xml:coverage.xml --junitxml=pytest-report.xml
+        pytest -c pytest-units.ini tests/ --junitxml=pytest-report.xml
         
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4
@@ -87,7 +87,7 @@ jobs:
       env:
         CI: true
       run: |
-        pytest tests/test_regression.py -v
+        pytest -c pytest-regression.ini tests/test_regression.py
 
   sonar:
     name: SonarCloud Analysis

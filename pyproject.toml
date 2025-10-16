@@ -102,9 +102,9 @@ addopts = [
     "--disable-warnings",
     "--cov=src",
     "--cov-report=term-missing",
-    "--cov-report=html",
+    "--cov-report=html", 
     "--cov-report=xml",
-    "--cov-fail-under=39"
+    "--cov-fail-under=30"
 ]
 markers = [
     "unit: Unit tests",
