@@ -24,9 +24,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+# PyInstaller  
 *.manifest
-*.spec
+# *.spec  # Commented out - we need wigor.spec for CI/CD
 
 # Installer logs
 pip-log.txt
