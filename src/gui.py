@@ -4,20 +4,28 @@ Utilise Tkinter pour afficher l'emploi du temps d'un étudiant EPSI.
 """
 
 import logging
+import os
 import threading
 from typing import Dict, List
 
-try:
-    import tkinter as tk
-    from tkinter import messagebox, ttk
-
-    TKINTER_AVAILABLE = True
-except ImportError:
-    # Tkinter non disponible (environnement headless)
+# Détection environnement CI - pas d'import tkinter en CI
+if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
     TKINTER_AVAILABLE = False
     tk = None
     messagebox = None
     ttk = None
+else:
+    try:
+        import tkinter as tk
+        from tkinter import messagebox, ttk
+
+        TKINTER_AVAILABLE = True
+    except ImportError:
+        # Tkinter non disponible (environnement headless)
+        TKINTER_AVAILABLE = False
+        tk = None
+        messagebox = None
+        ttk = None
 
 try:
     from ..auth.cookies_auth import build_session_from_cookie_header, is_authenticated
