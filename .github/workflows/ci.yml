@@ -124,6 +124,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # Force project creation if not exists
+        SONAR_SCANNER_OPTS: "-Dsonar.projectKey=emploi_temps_cicd -Dsonar.organization=zahamizaz"
       continue-on-error: true
 
   # =================== STAGE 2: BUILD ===================
