@@ -166,6 +166,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
+        load: true
         push: false
         tags: wigor-viewer:test
         cache-from: type=gha
