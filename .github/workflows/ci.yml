@@ -55,7 +55,7 @@ jobs:
       env:
         CI: true
       run: |
-        pytest -c pytest-units.ini tests/ --junitxml=pytest-report.xml
+        pytest -c pytest-units.ini tests/ --cov=src --cov=auth --cov-report=xml --cov-report=html --junitxml=pytest-report.xml
         
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4
@@ -108,6 +108,16 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: coverage-reports
+        
+    - name: List coverage files (debug)
+      run: |
+        ls -la
+        if [ -f coverage.xml ]; then
+          echo "✅ coverage.xml found"
+          head -20 coverage.xml
+        else
+          echo "❌ coverage.xml not found"
+        fi
         
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
