@@ -1,0 +1,256 @@
+Défis N 13 =>
+Prompts de génération — Wigor Viewer (from scratch)
+
+
+Prompt 1 — Initialiser le projet
+Crée un projet Python nommé wigor_viewer.
+•	Structure de base :
+wigor_viewer/
+  src/
+    __init__.py
+  tests/
+  assets/
+  .gitignore
+  pyproject.toml (ou requirements.txt si tu préfères)
+  README.md
+•	Ajoute un .gitignore Python standard.
+•	Configure un venv local et prépare l’installation des dépendances: requests, beautifulsoup4, lxml, pytest, pytest-cov, pillow, pyinstaller.
+Critères d’acceptation : arborescence créée, venv prêt, fichiers initiaux présents.
+________________________________________
+Prompt 2 — Dépendances & scripts
+Ajoute les dépendances dans requirements.txt et crée des scripts npm-like via a Makefile (ou tasks VS Code) :
+•	make install → pip install -r requirements.txt
+•	make test → pytest -v
+•	make cov → pytest --cov=src --cov-report=term --cov-report=html
+•	make run → python src/main.py
+Critères : requirements.txt rempli; Makefile (ou tasks.json) opérationnel.
+________________________________________
+Prompt 3 — Modules & points d’entrée
+Génère ces modules avec docstrings & logs (logging.basicConfig) :
+•	src/main.py : point d’entrée, configure logs, charge GUI et démarre l’app.
+•	src/gui.py : classe WigorApp(tk.Tk) (Tkinter), champs : base URL (readonly), identifiant, mot de passe, zone cookie, bouton “Charger”, sélecteur “Début de semaine” (date), tableau d’affichage. Image de fond (à venir).
+•	src/wigor_api.py : classe WigorClient gérant session requests, auth par cookies ou identifiants (placeholder), méthode fetch_html(date_debut, date_fin) retournant le HTML.
+•	src/timetable_parser.py : fonction parse_timetable(html) → retourne une liste d’objets cours {jour, debut, fin, matiere, prof, salle}.
+Critères : imports OK, aucune erreur d’exécution avec make run (GUI vide mais qui s’ouvre).
+________________________________________
+Prompt 4 — UI : champs et flux utilisateur
+Dans gui.py :
+•	Verrouille le Base URL à : https://ws-edt-cd.wigorservices.net/WebPsDyn.aspx?action=posEDTLMS (readonly).
+•	Ajoute un DatePicker (ou simple Entry + validateur) “Début de semaine” (lundi).
+•	Bouton “Charger l’emploi du temps” → appelle WigorClient avec :
+o	Si cookie non vide → auth via cookie
+o	Sinon → auth via identifiant + mot de passe
+o	Période = lundi → vendredi de la semaine choisie
+•	Affiche les cours groupés par jour dans un tableau (Treeview Tkinter).
+Critères : clic sur “Charger” déclenche un appel au client (mock pour l’instant), et rafraîchit la table (fill de données factices si besoin).
+________________________________________
+Prompt 5 — Client Wigor (cookies + identifiants)
+Implémente dans wigor_api.py :
+•	WigorClient(base_url) + set_cookies(raw_cookie_string) → parse et set tout dans requests.Session().cookies.
+•	login(username, password) : placeholder (retourne True/False) + TODO (cas CAS).
+•	fetch_html(date_debut, date_fin) :
+o	construit l’URL avec paramètres : serverID=C, Tel=<username>, date=<MM/DD/YYYY> (pour chaque jour), hashURL optionnel si présent côté page (laisser paramètre extensible).
+o	fait un GET par jour, concatène le HTML ou retourne une page par jour (à toi de voir, mais renvoyer une liste de pages HTML est mieux).
+Critères : logs détaillés, 200 OK attendu; en cas d’erreur → exceptions claires.
+________________________________________
+Prompt 6 — Parser HTML robuste
+Dans timetable_parser.py :
+•	Écris parse_timetable(html_or_list) robuste :
+o	Accepte soit un str HTML unique, soit une liste de pages HTML.
+o	Utilise lxml ou html.parser pour BeautifulSoup.
+o	Récupère les div.Case (ou la structure fournie) et extrait : Jour, Heure début/fin, Matière (Workshop…), Prof, Salle.
+o	Normalise les dates (YYYY-MM-DD) et les heures (HH:MM).
+o	Retourne une liste de dicts triée par jour puis heure.
+Critères : parser testable sur un extrait HTML de démo (fais un fixture minimal).
+________________________________________
+Prompt 7 — Intégration GUI + Parser
+Dans gui.py, complète la méthode du bouton “Charger” :
+•	Récupère la date de début de semaine → calcule Lundi→Vendredi.
+•	Appelle WigorClient (cookies ou login) pour récupérer la liste de pages HTML (une par jour affiché).
+•	Passe au parse_timetable → reçoit la liste des cours.
+•	Alimente le Treeview avec colonnes : Jour, Début, Fin, Matière, Prof, Salle.
+Critères : un clic affiche des lignes factices si pas d’accès réseau (mock fallback).
+________________________________________
+Prompt 8 — Image de fond & transparence
+Dans gui.py :
+•	Charge assets/background.png (Pillow).
+•	Affiche-la en plein fond de fenêtre (Canvas ou Label) et rends les widgets du formulaire semi-transparents (ou sans fond, relief plat) pour que le fond reste visible.
+•	Taille fixe par défaut : 900x650 (centrée à l’écran).
+Critères : le fond n’est pas masqué; les zones de saisie restent lisibles.
+________________________________________
+Prompt 9 — Tests unitaires (≥50% global)
+Crée des tests Pytest :
+•	tests/test_parser.py : test sur un extrait HTML (fixture) → vérifie l’extraction correcte.
+•	tests/test_wigor_api.py : mock requests.Session.get → 200 OK et contenu attendu.
+•	tests/test_gui.py : smoke test (création/destroy de la fenêtre sans erreur).
+•	tests/test_main.py : import/boot minimal.
+Ajoute pytest.ini pour ignorer les warnings bruyants.
+Critères : pytest --cov=src passe; rapport HTML généré.
+________________________________________
+Prompt 10 — README + Doc d’oral
+Remplis README.md avec :
+•	objectif du projet,
+•	installation (venv, make install),
+•	usage (lancement, cookies vs identifiants),
+•	build .exe,
+•	tests & couverture,
+•	architecture,
+•	problèmes rencontrés (503, cookies) & solutions,
+•	améliorations futures.
+Ajoute un fichier DOC_ORAL.md : plan 10 minutes + phrases clés.
+Critères : deux fichiers complets, clairs, sans TODO.
+________________________________________
+Prompt 11 — Build .exe (PyInstaller)
+Ajoute un script de build :
+•	Commande :
+pyinstaller --onefile --noconsole --icon=assets/wigor.ico --name="WigorViewer" src/main.py
+•	Copie assets/background.png à l’exécution si nécessaire (datas PyInstaller : --add-data "assets/background.png;assets").
+•	Résultat attendu dans dist/WigorViewer.exe.
+Critères : .exe exécutable depuis une machine sans Python.
+________________________________________
+Prompt 12 — Installateur Windows (Inno Setup)
+Génère un script Inno Setup (fichier .iss) prêt à builder un installateur :
+•	Nom produit : Wigor Viewer
+•	Version : 1.0.0
+•	Auteur : Hamza Aziz
+•	Fichier source : dist/WigorViewer.exe
+•	Dossier d’installation : C:\Program Files\Wigor Viewer
+•	Raccourcis : Bureau + Menu Démarrer
+•	Icône appli : assets/wigor.ico
+Critères : script .iss généré et commenté.
+________________________________________
+Prompt 13 — Logs & gestion d’erreurs UX
+Améliore les logs (niveau INFO/ERROR) et la remontée d’erreurs UX :
+•	En cas de 503, 401, 403 → message clair dans la GUI (“Vérifiez le cookie / Identifiants ou réessayez dans 5 min”).
+•	En cas d’absence de cours → “Aucun cours récupéré sur la période sélectionnée”.
+Critères : try/except autour des appels réseau, popups Tkinter (messagebox) propres.
+________________________________________
+Prompt 14 — Paramètres utilisateurs (persistants)
+Ajoute un petit fichier de config JSON (~/.wigor_viewer/config.json) pour mémoriser :
+•	dernier identifiant,
+•	dernier cookie,
+•	dernière date de début de semaine.
+Charge au démarrage; sauvegarde à la fermeture.
+Critères : expérience “reprend là où je me suis arrêté”.
+________________________________________
+Prompt 15 — Finitions & contrôle qualité
+•	Ajoute un flake8/ruff rapide et formate le code (black).
+•	Vérifie que make cov dépasse 50% global, avec parser ≥80%.
+•	Vérifie que le binaire s’ouvre, fond visible, saisie OK, table lisible.
+•	Mets à jour README.md avec captures (placeholders).
+Critères : projet livrable + présentable en soutenance.
+
+Défis N 5=>
+Prompts de CICD
+
+0) Audit & normalisation rapide du projet
+
+Analyse le repo emploi_temps_cicd. Sans rien casser côté métier, assure-toi que les tests soient hermétiques et headless (pas d’UI Tkinter, pas de réseau).
+
+Laisse pytest.ini en place et garde la génération de coverage.xml.
+
+Harmonise les imports pour que les tests exécutés depuis la racine fonctionnent.
+
+Si des tests sont à la racine (ex: test_clean_days.py, test_integration.py, etc.), garde-les utilisables tels quels ou ajoute des wrappers sous tests/ qui les importent proprement.
+
+Vérifie que les fixtures (fixtures/ et test_edt.html) soient chargées via chemins robustes.
+
+Conserve sonar-project.properties (clé ZahamIzaz_emploi_temps_cicd) et l’output coverage.xml attendu par SonarCloud. Donne-moi les diffs nécessaires uniquement si tu dois corriger des chemins. 
+GitHub
++1
+
+1) Stage test & quality (lint + unit + non-régression + Sonar/Quality Gate)
+
+Corrige/écris .github/workflows/ci.yml pour avoir un stage 1 test_quality composé de 4 jobs :
+
+Lint: flake8 . (utilise les règles de .flake8 déjà présent).
+
+Unit Tests: pytest --cov=. --cov-report=xml:coverage.xml et upload de coverage.xml en artifact.
+
+Regression Tests: exécuter test_regression.py (snapshot).
+
+SonarCloud Analysis: récupère l’artifact coverage.xml et lance l’action officielle SonarCloud avec ${{ secrets.SONAR_TOKEN }}. Le job échoue si Quality Gate est rouge.
+Contraintes :
+
+Python 3.10 (actions/setup-python).
+
+Cache pip.
+
+sonar needs les 2 jobs de tests.
+
+Ne touche pas aux autres fichiers (tests, pytest.ini, sonar-project.properties).
+Retourne le YAML complet du workflow. 
+GitHub
+
+2) Stage build (image Docker + smoke test)
+
+Mets à jour le Dockerfile multi-étapes pour builder et tester l’app en mode console :
+
+builder: base python:3.10-slim, installe deps depuis requirements.txt et requirements-dev.txt, exécute des tests rapides (ou python smoke_test.py) puis prépare l’app.
+
+runtime: base python:3.10-slim, ne copie que le strict nécessaire (code + fixtures/), et ENTRYPOINT par défaut qui lance un smoke test (python smoke_test.py ou commande équivalente).
+Ajoute au workflow un job Docker Build & Test dans le stage 2 build qui :
+
+build l’image ghcr.io/${{ github.repository }}:ci,
+
+exécute docker run --rm (le smoke doit retourner 0).
+Ne modifie pas la logique des tests existants, réutilise smoke_test.py déjà présent. Donne le Dockerfile final + la section YAML du job. 
+GitHub
+
+3) (Optionnel) Stage build — exécutable PyInstaller
+
+Si un build PyInstaller est demandé, ajoute un job Build Executable (Ubuntu) juste après Docker dans le stage build :
+
+installe python3-tk et patchelf,
+
+installe deps,
+
+build un exécutable console (headless). S’il n’existe pas de spec file, crée wigor.spec minimal ou utilise build_exe.py déjà présent ; upload l’exe en artifact.
+Retourne les fichiers ajoutés/modifiés au complet (wigor.spec si créé, section YAML). 
+GitHub
+
+4) Stage deploy (uniquement si stage 1 & 2 verts)
+
+Ajoute un stage 3 deploy avec 2 jobs conditionnels :
+
+Create Release (uniquement si tag v*) : crée une GitHub Release et attache les artifacts (exécutable si présent).
+
+Deploy to Registry : push l’image Docker sur GHCR avec tags latest et ${{ github.ref_name }}.
+Contraintes :
+
+permissions: packages: write, contents: write.
+
+deploy needs tous les jobs du stage build.
+Retourne la section YAML complète. 
+GitHub
+
+5) Stabiliser les Unit Tests (si le job rouge persiste)
+
+Rends les tests unitaires hermétiques :
+
+aucun import qui ouvre une GUI,
+
+pas d’appel réseau réel (mocke requests si nécessaire),
+
+chemins de fixtures robustes (utilise importlib.resources),
+
+assertions déterministes (pas d’ordre non garanti).
+Donne les fichiers de tests modifiés au complet (garde les noms existants : test_clean_days.py, test_integration.py, etc.) sans toucher au stage YAML. 
+GitHub
+
+6) Dossier preuves de travail (exigence Workshop)
+
+Génère/complete CICD_PIPELINE.md (ou PROMPTS.md) avec :
+
+tous les prompts utilisés (ceux-ci),
+
+schéma simple des 3 stages + dépendances,
+
+captures/émoticônes OK pour l’oral,
+
+check-list “Quality Gate avant déploiement”,
+
+lien vers le run Actions de référence.
+Donne le markdown final. 
+GitHub
+
